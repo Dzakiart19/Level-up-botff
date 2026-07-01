@@ -259,6 +259,8 @@ class FF_CLIENT(threading.Thread):
         self.auto_start_teamcode = None
         self.stop_auto = False
         self._status_callback = status_callback
+        self._sc = None   # online socket (per-instance, bukan global)
+        self._cl = None   # whisper socket (per-instance, bukan global)
         # Simpan referensi self ke holder sebelum blocking call
         if instance_holder is not None:
             instance_holder["bot"] = self
