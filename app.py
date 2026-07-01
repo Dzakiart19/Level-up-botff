@@ -164,20 +164,45 @@ def _gen_ip_for_uid(uid: str) -> str:
     )
 
 def build_majorlogin_packet(access_token: str, open_id: str, platform_type: int, uid: str = "") -> bytes:
-    """Minimal packet — only essential auth fields to stay under proxy size limit."""
+    """Full device fingerprint packet for MajorLogin — spoofs a real Indonesian Android device."""
+    rng = _random.Random(int(uid) if uid.isdigit() else hash(uid))
+    dev = rng.choice(_ANDROID_DEVICES)
+    dev_name, sys_sw, processor, gpu_renderer, gpu_version, screen_dpi, screen_w, screen_h = dev
+    carrier = rng.choice(_ID_CARRIERS)
+    ip = _gen_ip_for_uid(uid)
+    device_id = _gen_device_id_for_uid(uid)
+
     m = MajoRLogin_pb2.MajorLogin()
-    m.event_time          = str(datetime.now())[:-7]
-    m.game_name           = "free fire"
-    m.platform_id         = platform_type
-    m.client_version      = "1.120.1"
-    m.open_id             = open_id
-    m.open_id_type        = str(platform_type)
-    m.access_token        = access_token
-    m.client_using_version = "7428b253defc164018c604a1ebbfebdf"
-    m.login_by            = 3
-    m.channel_type        = 3
-    m.client_version_code = "2019118695"
-    m.login_open_id_type  = platform_type
+    m.event_time            = str(datetime.now())[:-7]
+    m.game_name             = "free fire"
+    m.platform_id           = platform_type
+    m.client_version        = "1.120.1"
+    m.system_software       = sys_sw
+    m.system_hardware       = dev_name
+    m.telecom_operator      = carrier
+    m.network_type          = "WIFI"
+    m.screen_width          = screen_w
+    m.screen_height         = screen_h
+    m.screen_dpi            = screen_dpi
+    m.processor_details     = processor
+    m.memory                = 4096
+    m.gpu_renderer          = gpu_renderer
+    m.gpu_version           = gpu_version
+    m.unique_device_id      = device_id
+    m.client_ip             = ip
+    m.language              = "id"
+    m.open_id               = open_id
+    m.open_id_type          = str(platform_type)
+    m.device_type           = "Handheld"
+    m.access_token          = access_token
+    m.platform_sdk_id       = platform_type
+    m.network_operator_a    = carrier
+    m.network_type_a        = "WIFI"
+    m.client_using_version  = "7428b253defc164018c604a1ebbfebdf"
+    m.login_by              = 3
+    m.channel_type          = 3
+    m.client_version_code   = "2019118695"
+    m.login_open_id_type    = platform_type
     m.origin_platform_type  = str(platform_type)
     m.primary_platform_type = str(platform_type)
     return enc_new(m.SerializeToString())
@@ -489,14 +514,14 @@ class FF_CLIENT(threading.Thread):
                     f"[TOKEN_MAKER] platform={platform_type} token={'<set>' if res_obj.token else '<empty>'} "
                     f"server_url={res_obj.server_url!r}"
                 )
+                # Check banned FIRST — banned accounts return empty token with blacklist field set
+                if res_obj.blacklist and res_obj.blacklist.ban_reason:
+                    logging.warning(f"[TOKEN_MAKER] Account BANNED (reason={res_obj.blacklist.ban_reason})")
+                    raise BotBannedException(f"Account banned by Garena (reason={res_obj.blacklist.ban_reason})")
+
                 if not res_obj.token:
                     logging.warning(f"[TOKEN_MAKER] platform={platform_type} token kosong, skip")
                     continue
-
-                # Check banned
-                if res_obj.blacklist and res_obj.blacklist.ban_reason:
-                    logging.warning(f"Account banned (reason={res_obj.blacklist.ban_reason})")
-                    raise BotBannedException(f"Account banned by Garena (reason={res_obj.blacklist.ban_reason})")
 
                 BASE64_TOKEN = res_obj.token
                 key = res_obj.ak

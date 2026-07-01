@@ -380,6 +380,7 @@
     <div class="controls">
       <button class="btn btn-primary" onclick="startAll()">▶ Start Semua</button>
       <button class="btn btn-danger" onclick="stopAll()">■ Stop Semua</button>
+      <button class="btn btn-secondary" onclick="removeBanned()" id="btn-remove-banned">🗑 Hapus Banned</button>
       <div class="teamcode-form">
         <label>Team Code:</label>
         <input type="text" id="teamcode-input" placeholder="Masukkan kode..." maxlength="10">
@@ -561,6 +562,18 @@ async function stopAll() {
   const data = await res.json();
   showToast(data.msg, data.ok ? 'success' : 'error');
   setTimeout(loadAccounts, 500);
+}
+
+async function removeBanned() {
+  const btn = document.getElementById('btn-remove-banned');
+  const banned = allAccounts.filter(a => a.status === 'banned');
+  if (banned.length === 0) return showToast('Tidak ada akun banned yang terdeteksi', 'info');
+  btn.disabled = true;
+  const res = await fetch('/api/remove-banned', { method: 'POST' });
+  const data = await res.json();
+  btn.disabled = false;
+  showToast(data.msg, data.ok ? 'success' : 'error');
+  if (data.ok && data.removed > 0) setTimeout(loadAccounts, 500);
 }
 
 async function setTeamCode() {

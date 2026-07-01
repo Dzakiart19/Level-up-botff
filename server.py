@@ -27,6 +27,18 @@ def load_accounts():
         add_log(f"Gagal baca accounts.json: {e}", "error")
     return []
 
+def remove_banned_account(uid):
+    accounts = load_accounts()
+    before = len(accounts)
+    accounts = [a for a in accounts if a["uid"] != uid]
+    if len(accounts) < before:
+        try:
+            with open(ACCOUNTS_FILE, "w", encoding="utf-8") as f:
+                json.dump(accounts, f, indent=2, ensure_ascii=False)
+            add_log(f"[UID:{uid}] Akun banned otomatis dihapus dari daftar", "warning")
+        except Exception as e:
+            add_log(f"Gagal hapus akun banned UID:{uid}: {e}", "error")
+
 def add_log(message, level="info"):
     timestamp = datetime.now().strftime("%H:%M:%S")
     entry = {"time": timestamp, "msg": message, "level": level}
@@ -55,6 +67,7 @@ def run_bot(uid, password, name):
     except BotBannedException as e:
         bot_status[uid] = "banned"
         add_log(f"[{name}] Akun dibanned oleh Garena: {e}", "error")
+        remove_banned_account(uid)
     except BotRestartException:
         bot_status[uid] = "offline"
         add_log(f"[{name}] Bot berhenti (restart diminta)", "info")
@@ -142,6 +155,24 @@ def stop_all():
             bot_status[uid] = "offline"
     add_log("Semua bot dihentikan", "warning")
     return jsonify({"ok": True, "msg": "Semua bot dihentikan"})
+
+@app.route("/api/remove-banned", methods=["POST"])
+def api_remove_banned():
+    accounts = load_accounts()
+    removed = []
+    for acc in accounts:
+        uid = acc["uid"]
+        if bot_status.get(uid) == "banned":
+            removed.append(uid)
+    if removed:
+        remaining = [a for a in accounts if a["uid"] not in removed]
+        try:
+            with open(ACCOUNTS_FILE, "w", encoding="utf-8") as f:
+                json.dump(remaining, f, indent=2, ensure_ascii=False)
+            add_log(f"{len(removed)} akun banned dihapus dari daftar", "warning")
+        except Exception as e:
+            return jsonify({"ok": False, "msg": f"Gagal hapus: {e}"})
+    return jsonify({"ok": True, "msg": f"{len(removed)} akun banned dihapus", "removed": len(removed)})
 
 @app.route("/api/teamcode", methods=["POST"])
 def set_teamcode():
