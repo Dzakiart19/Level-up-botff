@@ -41,12 +41,23 @@ def run_bot(uid, password, name):
         add_log(f"[{name}] Menghubungkan...", "info")
         bot_status[uid] = "connecting"
         from app import FF_CLIENT
+        bot = FF_CLIENT(uid, password)
         bot_status[uid] = "online"
         add_log(f"[{name}] Bot online!", "success")
-        FF_CLIENT(uid, password)
+    except OSError as e:
+        bot_status[uid] = "error"
+        add_log(f"[{name}] Gagal koneksi ke server game (network error): {e}", "error")
     except Exception as e:
         bot_status[uid] = "error"
-        add_log(f"[{name}] Error: {str(e)}", "error")
+        err_msg = str(e)
+        if "Name or service not known" in err_msg or "Failed to resolve" in err_msg:
+            add_log(f"[{name}] Gagal koneksi: server Garena tidak terjangkau dari environment ini", "error")
+        elif "Wire format was corrupt" in err_msg or "DecodeError" in err_msg:
+            add_log(f"[{name}] Gagal login: respons server tidak valid (cek kredensial akun)", "error")
+        elif "access_token" in err_msg or "KeyError" in err_msg:
+            add_log(f"[{name}] Gagal login: UID/password salah atau akun diblokir", "error")
+        else:
+            add_log(f"[{name}] Error: {err_msg}", "error")
 
 @app.route("/")
 def index():
