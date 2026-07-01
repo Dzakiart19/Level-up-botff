@@ -51,6 +51,33 @@ nIcKXoR = b'1e5898ccb8dfdd921f9bdea848768b64a201'
 cOnSeCuTiVe = 0
 pRiNtLoCk = threading.Lock()
 iPlOcK = threading.Lock()
+aCcJsOnLoCk = threading.Lock()
+
+ACCOUNTS_JSON_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "accounts.json")
+
+def import_to_accounts_json(acc):
+    entry = {
+        "uid": str(acc.get("uid", "")),
+        "password": acc.get("password", ""),
+        "region": str(acc.get("region", "")).lower().replace("ghost", "id"),
+        "nickname": acc.get("nickname", ""),
+    }
+    if not entry["uid"] or not entry["password"]:
+        return
+    with aCcJsOnLoCk:
+        try:
+            if os.path.exists(ACCOUNTS_JSON_PATH):
+                with open(ACCOUNTS_JSON_PATH, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+            else:
+                data = []
+            existing_uids = {a["uid"] for a in data}
+            if entry["uid"] not in existing_uids:
+                data.append(entry)
+                with open(ACCOUNTS_JSON_PATH, "w", encoding="utf-8") as f:
+                    json.dump(data, f, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
 
 INDIAN_CARRIERS = [
     "Jio", "Airtel", "Vodafone Idea", "BSNL", "MTNL", 
@@ -654,6 +681,7 @@ class AcCoUnTcReAtOr:
                         f.write(line)
                     with self.results_lock:
                         self.saved_uids.add(uid)
+                    import_to_accounts_json(acc)
                     return True
             except:
                 pass
