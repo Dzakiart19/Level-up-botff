@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Free Fire Bot Dashboard</title>
+<style>
+  :root {
+    --bg: #0d0d0d;
+    --surface: #161616;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --accent: #ff3c3c;
+    --accent2: #ff6b00;
+    --green: #00e676;
+    --yellow: #ffd600;
+    --blue: #40c4ff;
+    --text: #e0e0e0;
+    --muted: #666;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+    gap: 10px;
+  }
+  .logo { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .logo-icon { width: 32px; height: 32px; background: linear-gradient(135deg, var(--accent), var(--accent2)); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+  .logo-text h1 { font-size: 14px; font-weight: 700; color: #fff; }
+  .logo-text p { font-size: 10px; color: var(--muted); }
+  .header-stats { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .stat-pill { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; font-size: 11px; display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot.green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot.yellow { background: var(--yellow); }
+  .dot.red { background: var(--accent); }
+
+  /* ── MOBILE TABS ── */
+  .mobile-tabs {
+    display: none;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 53px; z-index: 99;
+  }
+  .tab-bar { display: flex; }
+  .tab-btn {
+    flex: 1; padding: 10px 4px; background: none; border: none;
+    color: var(--muted); font-size: 12px; font-weight: 600;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all 0.15s; text-align: center;
+  }
+  .tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ── DESKTOP LAYOUT ── */
+  .layout { display: flex; flex: 1; height: calc(100vh - 65px); overflow: hidden; }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 280px;
+    min-width: 280px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .sidebar-header h2 { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .search-box { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  .search-box input {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+  }
+  .search-box input:focus { border-color: var(--accent); }
+  .search-box input::placeholder { color: var(--muted); }
+  .account-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .account-list::-webkit-scrollbar { width: 4px; }
+  .account-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .account-item {
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .account-item:hover { background: var(--surface2); border-color: var(--border); }
+  .account-item.active { background: rgba(255,60,60,0.08); border-color: rgba(255,60,60,0.3); }
+  .acc-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .acc-avatar {
+    width: 34px; height: 34px; border-radius: 8px;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: var(--accent);
+    flex-shrink: 0;
+  }
+  .acc-info { min-width: 0; }
+  .acc-info h3 { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .acc-info p { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .acc-status { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; white-space: nowrap; flex-shrink: 0; margin-left: 6px; }
+  .status-online { background: rgba(0,230,118,0.12); color: var(--green); }
+  .status-connecting { background: rgba(255,214,0,0.12); color: var(--yellow); }
+  .status-offline { background: rgba(255,255,255,0.05); color: var(--muted); }
+  .status-error { background: rgba(255,60,60,0.12); color: var(--accent); }
+
+  /* ── MAIN ── */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+  /* ── CONTROLS ── */
+  .controls {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .btn {
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s;
+    display: flex; align-items: center; gap: 7px;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: #fff; }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-danger { background: rgba(255,60,60,0.12); color: var(--accent); border: 1px solid rgba(255,60,60,0.3); }
+  .btn-danger:hover { background: rgba(255,60,60,0.2); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-success { background: rgba(0,230,118,0.12); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+  .btn-success:hover { background: rgba(0,230,118,0.2); }
+
+  .teamcode-form { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .teamcode-form label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .teamcode-form input {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    width: 130px;
+    outline: none;
+    min-width: 0;
+  }
+  .teamcode-form input:focus { border-color: var(--blue); }
+
+  /* ── CONTENT AREA ── */
+  .content-area { flex: 1; display: flex; overflow: hidden; }
+
+  /* ── ACCOUNT GRID ── */
+  .account-grid-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    min-width: 0;
+  }
+  .account-grid-panel::-webkit-scrollbar { width: 4px; }
+  .account-grid-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  .grid-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .grid-header h2 { font-size: 14px; font-weight: 700; }
+  .grid-header span { font-size: 12px; color: var(--muted); }
+
+  .account-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+
+  .account-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    transition: all 0.2s;
+  }
+  .account-card:hover { border-color: #3a3a3a; }
+  .account-card.card-online { border-color: rgba(0,230,118,0.25); }
+  .account-card.card-connecting { border-color: rgba(255,214,0,0.25); }
+  .card-top { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; min-width: 0; }
+  .card-avatar {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: linear-gradient(135deg, #1a1a2e, #16213e);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800; color: var(--accent);
+    flex-shrink: 0;
+  }
+  .card-info { flex: 1; min-width: 0; }
+  .card-name { font-size: 13px; font-weight: 600; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-uid { font-size: 11px; color: var(--muted); }
+  .card-actions { display: flex; gap: 6px; margin-top: 8px; }
+  .card-btn {
+    flex: 1; padding: 7px; border-radius: 6px; border: none;
+    cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s;
+  }
+  .card-btn-start { background: rgba(0,230,118,0.1); color: var(--green); border: 1px solid rgba(0,230,118,0.2); }
+  .card-btn-start:hover { background: rgba(0,230,118,0.2); }
+  .card-btn-stop { background: rgba(255,60,60,0.1); color: var(--accent); border: 1px solid rgba(255,60,60,0.2); }
+  .card-btn-stop:hover { background: rgba(255,60,60,0.2); }
+  .card-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ── LOG PANEL ── */
+  .log-panel {
+    width: 320px;
+    min-width: 320px;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  .log-header {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .log-header h2 { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); animation: pulse 1.5s infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .log-clear { background: none; border: 1px solid var(--border); border-radius: 6px; color: var(--muted); font-size: 11px; padding: 4px 10px; cursor: pointer; }
+  .log-clear:hover { color: var(--accent); border-color: var(--accent); }
+  .log-body { flex: 1; overflow-y: auto; padding: 10px; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; }
+  .log-body::-webkit-scrollbar { width: 4px; }
+  .log-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .log-entry { padding: 4px 6px; border-radius: 4px; margin-bottom: 2px; line-height: 1.5; word-break: break-all; }
+  .log-time { color: var(--muted); margin-right: 6px; }
+  .log-msg.info { color: var(--blue); }
+  .log-msg.success { color: var(--green); }
+  .log-msg.warning { color: var(--yellow); }
+  .log-msg.error { color: var(--accent); }
+
+  /* ── TOAST ── */
+  .toast {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 16px;
+    font-size: 13px; color: var(--text);
+    opacity: 0;
+    transition: all 0.3s ease;
+    z-index: 999; max-width: calc(100vw - 32px);
+    display: flex; align-items: center; gap: 10px;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+  .toast.toast-success { border-color: rgba(0,230,118,0.4); }
+  .toast.toast-error { border-color: rgba(255,60,60,0.4); }
+
+  /* ══════════════════════════════════════
+     MOBILE  (≤ 768px)
+  ══════════════════════════════════════ */
+  @media (max-width: 768px) {
+    header { top: 0; padding: 8px 12px; }
+    .logo-text p { display: none; }
+    .stat-pill { padding: 3px 8px; font-size: 10px; }
+
+    .mobile-tabs { display: block; top: 49px; }
+
+    /* Kill desktop layout */
+    .layout {
+      display: block;
+      height: auto;
+      overflow: visible;
+    }
+
+    /* Each panel becomes a full-page tab */
+    .sidebar,
+    .main,
+    .log-panel {
+      display: none;
+      width: 100%;
+      min-width: 0;
+      height: calc(100vh - 49px - 41px); /* viewport - header - tabbar */
+      overflow-y: auto;
+      border: none;
+    }
+    .sidebar.tab-active,
+    .main.tab-active,
+    .log-panel.tab-active {
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Main panel inner layout on mobile */
+    .main.tab-active { overflow: hidden; }
+    .content-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .account-grid-panel { flex: 1; overflow-y: auto; padding: 12px; }
+
+    /* Grid: 2 columns on phone */
+    .account-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+
+    /* Controls: stack nicely */
+    .controls {
+      padding: 10px 12px;
+      gap: 8px;
+    }
+    .teamcode-form { width: 100%; }
+    .teamcode-form input { flex: 1; width: auto; }
+
+    /* Log panel full height */
+    .log-panel { border-left: none; border-top: 1px solid var(--border); }
+  }
+
+  @media (max-width: 400px) {
+    .account-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🔥</div>
+    <div class="logo-text">
+      <h1>Free Fire Bot</h1>
+      <p>Dashboard Control Panel</p>
+    </div>
+  </div>
+  <div class="header-stats">
+    <div class="stat-pill"><div class="dot green"></div><span id="count-online">0</span> Online</div>
+    <div class="stat-pill"><div class="dot yellow"></div><span id="count-connecting">0</span> Connecting</div>
+    <div class="stat-pill"><div class="dot red"></div><span id="count-offline">0</span> Offline</div>
+  </div>
+</header>
+
+<!-- MOBILE TAB BAR -->
+<nav class="mobile-tabs">
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('list')">📋 Daftar</button>
+    <button class="tab-btn" onclick="switchTab('grid')">⊞ Grid</button>
+    <button class="tab-btn" onclick="switchTab('log')">📟 Log</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <!-- SIDEBAR (Tab: list) -->
+  <aside class="sidebar tab-active" id="tab-list">
+    <div class="sidebar-header">
+      <h2>Akun Bot</h2>
+      <span style="font-size:12px;color:var(--muted)" id="total-count">0 akun</span>
+    </div>
+    <div class="search-box">
+      <input type="text" id="search-input" placeholder="Cari nama / UID...">
+    </div>
+    <div class="account-list" id="account-list"></div>
+  </aside>
+
+  <!-- MAIN (Tab: grid) -->
+  <div class="main" id="tab-grid">
+    <div class="controls">
+      <button class="btn btn-primary" onclick="startAll()">▶ Start Semua</button>
+      <button class="btn btn-danger" onclick="stopAll()">■ Stop Semua</button>
+      <div class="teamcode-form">
+        <label>Team Code:</label>
+        <input type="text" id="teamcode-input" placeholder="Masukkan kode..." maxlength="10">
+        <button class="btn btn-success" onclick="setTeamCode()">✓ Set</button>
+      </div>
+    </div>
+    <div class="content-area">
+      <div class="account-grid-panel">
+        <div class="grid-header">
+          <h2>Daftar Akun</h2>
+          <span id="grid-count">Memuat...</span>
+        </div>
+        <div class="account-grid" id="account-grid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG PANEL (Tab: log) -->
+  <div class="log-panel" id="tab-log">
+    <div class="log-header">
+      <h2><div class="live-dot"></div> Live Log</h2>
+      <button class="log-clear" onclick="clearLogs()">Bersihkan</button>
+    </div>
+    <div class="log-body" id="log-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let allAccounts = [];
+
+/* ── TAB SWITCHING (mobile) ── */
+const tabIds = { list: 'tab-list', grid: 'tab-grid', log: 'tab-log' };
+let currentTab = 'list';
+
+function switchTab(name) {
+  // Hide all panels
+  Object.values(tabIds).forEach(id => {
+    document.getElementById(id).classList.remove('tab-active');
+  });
+  // Show selected
+  document.getElementById(tabIds[name]).classList.add('tab-active');
+  currentTab = name;
+  // Update tab buttons
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', ['list','grid','log'][i] === name);
+  });
+}
+
+/* ── On desktop, always show all panels ── */
+function handleResize() {
+  const isDesktop = window.innerWidth > 768;
+  if (isDesktop) {
+    Object.values(tabIds).forEach(id => {
+      document.getElementById(id).classList.add('tab-active');
+    });
+  } else {
+    // Restore only the active tab
+    Object.values(tabIds).forEach(id => {
+      document.getElementById(id).classList.remove('tab-active');
+    });
+    document.getElementById(tabIds[currentTab]).classList.add('tab-active');
+  }
+}
+window.addEventListener('resize', handleResize);
+handleResize();
+
+/* ── HELPERS ── */
+function getInitial(name) { return name ? name.charAt(0).toUpperCase() : '?'; }
+
+function statusLabel(s) {
+  if (s === 'online') return '<span class="acc-status status-online">● Online</span>';
+  if (s === 'connecting') return '<span class="acc-status status-connecting">◌ Connecting</span>';
+  if (s === 'error') return '<span class="acc-status status-error">✗ Error</span>';
+  return '<span class="acc-status status-offline">○ Offline</span>';
+}
+
+function cardClass(s) {
+  if (s === 'online') return 'account-card card-online';
+  if (s === 'connecting') return 'account-card card-connecting';
+  return 'account-card';
+}
+
+/* ── RENDER ── */
+function renderSidebar(accounts) {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const filtered = accounts.filter(a =>
+    a.name.toLowerCase().includes(q) || a.uid.includes(q)
+  );
+  document.getElementById('total-count').textContent = `${accounts.length} akun`;
+  document.getElementById('account-list').innerHTML = filtered.map(a => `
+    <div class="account-item ${a.status === 'online' ? 'active' : ''}">
+      <div class="acc-left">
+        <div class="acc-avatar">${getInitial(a.name)}</div>
+        <div class="acc-info">
+          <h3>${a.name}</h3>
+          <p>UID: ${a.uid}</p>
+        </div>
+      </div>
+      ${statusLabel(a.status)}
+    </div>
+  `).join('');
+}
+
+function renderGrid(accounts) {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const filtered = accounts.filter(a =>
+    a.name.toLowerCase().includes(q) || a.uid.includes(q)
+  );
+  document.getElementById('grid-count').textContent = `${filtered.length} dari ${accounts.length} akun`;
+  document.getElementById('account-grid').innerHTML = filtered.map(a => `
+    <div class="${cardClass(a.status)}" id="card-${a.uid}">
+      <div class="card-top">
+        <div class="card-avatar">${getInitial(a.name)}</div>
+        <div class="card-info">
+          <div class="card-name" title="${a.name}">${a.name}</div>
+          <div class="card-uid">UID: ${a.uid}</div>
+        </div>
+        ${statusLabel(a.status)}
+      </div>
+      <div class="card-actions">
+        <button class="card-btn card-btn-start"
+          ${a.status === 'online' || a.status === 'connecting' ? 'disabled' : ''}
+          onclick="startBot('${a.uid}')">▶ Start</button>
+        <button class="card-btn card-btn-stop"
+          ${a.status === 'offline' ? 'disabled' : ''}
+          onclick="stopBot('${a.uid}')">■ Stop</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderStats(accounts) {
+  const online = accounts.filter(a => a.status === 'online').length;
+  const connecting = accounts.filter(a => a.status === 'connecting').length;
+  const offline = accounts.length - online - connecting;
+  document.getElementById('count-online').textContent = online;
+  document.getElementById('count-connecting').textContent = connecting;
+  document.getElementById('count-offline').textContent = offline;
+}
+
+/* ── API ── */
+async function loadAccounts() {
+  try {
+    const res = await fetch('/api/accounts');
+    allAccounts = await res.json();
+    renderSidebar(allAccounts);
+    renderGrid(allAccounts);
+    renderStats(allAccounts);
+  } catch(e) {}
+}
+
+async function startBot(uid) {
+  const res = await fetch(`/api/start/${uid}`, { method: 'POST' });
+  const data = await res.json();
+  showToast(data.msg, data.ok ? 'success' : 'error');
+  setTimeout(loadAccounts, 800);
+}
+
+async function stopBot(uid) {
+  const res = await fetch(`/api/stop/${uid}`, { method: 'POST' });
+  const data = await res.json();
+  showToast(data.msg, data.ok ? 'success' : 'error');
+  setTimeout(loadAccounts, 800);
+}
+
+async function startAll() {
+  showToast('Menjalankan semua bot...', 'info');
+  const res = await fetch('/api/start-all', { method: 'POST' });
+  const data = await res.json();
+  showToast(data.msg, data.ok ? 'success' : 'error');
+  setTimeout(loadAccounts, 2000);
+}
+
+async function stopAll() {
+  const res = await fetch('/api/stop-all', { method: 'POST' });
+  const data = await res.json();
+  showToast(data.msg, data.ok ? 'success' : 'error');
+  setTimeout(loadAccounts, 500);
+}
+
+async function setTeamCode() {
+  const code = document.getElementById('teamcode-input').value.trim();
+  if (!code) return showToast('Masukkan team code dulu', 'error');
+  const res = await fetch('/api/teamcode', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code })
+  });
+  const data = await res.json();
+  showToast(data.msg, data.ok ? 'success' : 'error');
+}
+
+/* ── SSE LOGS ── */
+const logBody = document.getElementById('log-body');
+
+function connectLogs() {
+  const es = new EventSource('/api/logs');
+  es.onmessage = e => {
+    const d = JSON.parse(e.data);
+    if (d.ping) return;
+    const div = document.createElement('div');
+    div.className = 'log-entry';
+    div.innerHTML = `<span class="log-time">${d.time}</span><span class="log-msg ${d.level || 'info'}">${d.msg}</span>`;
+    logBody.appendChild(div);
+    logBody.scrollTop = logBody.scrollHeight;
+    if (logBody.children.length > 200) logBody.removeChild(logBody.firstChild);
+  };
+  es.onerror = () => { es.close(); setTimeout(connectLogs, 3000); };
+}
+
+function clearLogs() { logBody.innerHTML = ''; }
+
+/* ── TOAST ── */
+let toastTimer;
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  const icons = { success: '✓', error: '✗', info: 'ℹ', warning: '⚠' };
+  t.innerHTML = `${icons[type] || 'ℹ'} ${msg}`;
+  t.className = `toast show toast-${type}`;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+
+/* ── SEARCH ── */
+document.getElementById('search-input').addEventListener('input', () => {
+  renderSidebar(allAccounts);
+  renderGrid(allAccounts);
+});
+
+/* ── INIT ── */
+loadAccounts();
+setInterval(loadAccounts, 5000);
+connectLogs();
+</script>
+</body>
+</html>
