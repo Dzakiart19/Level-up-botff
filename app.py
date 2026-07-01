@@ -454,6 +454,8 @@ class FF_CLIENT(threading.Thread):
                 )
                 return result
 
+            except BotBannedException:
+                raise
             except requests.exceptions.Timeout:
                 logging.error(f"[OAUTH] UID={uid} timeout (attempt {attempt}/{max_retries})")
                 if attempt < max_retries:
