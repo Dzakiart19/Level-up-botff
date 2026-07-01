@@ -41,9 +41,17 @@ def run_bot(uid, password, name):
     try:
         add_log(f"[{name}] Menghubungkan...", "info")
         bot_status[uid] = "connecting"
-        bot = FF_CLIENT(uid, password)
-        bot_status[uid] = "online"
-        add_log(f"[{name}] Bot online!", "success")
+
+        def status_callback(status):
+            bot_status[uid] = status
+            if status == "online":
+                add_log(f"[{name}] Bot online! Terkoneksi ke server game.", "success")
+
+        bot = FF_CLIENT(uid, password, status_callback=status_callback)
+        # Sampai sini hanya jika bot disconnect secara normal
+        if bot_status.get(uid) == "online":
+            bot_status[uid] = "offline"
+            add_log(f"[{name}] Koneksi terputus, bot offline.", "warning")
     except BotBannedException as e:
         bot_status[uid] = "banned"
         add_log(f"[{name}] Akun dibanned oleh Garena: {e}", "error")
@@ -62,6 +70,10 @@ def run_bot(uid, password, name):
             add_log(f"[{name}] Gagal login: respons server tidak valid (cek kredensial akun)", "error")
         elif "access_token" in err_msg or "KeyError" in err_msg:
             add_log(f"[{name}] Gagal login: UID/password salah atau akun diblokir", "error")
+        elif "IP:port tidak ditemukan" in err_msg or "Fields ada" in err_msg:
+            add_log(f"[{name}] Gagal parse server address dari Garena: {err_msg}", "error")
+        elif "Gagal connect" in err_msg or "timed out" in err_msg or "Connection refused" in err_msg:
+            add_log(f"[{name}] Gagal konek ke game server: {err_msg}", "error")
         else:
             add_log(f"[{name}] Error: {err_msg}", "error")
 

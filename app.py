@@ -125,26 +125,68 @@ def dec_new(data: bytes) -> bytes:
         return data
 
 
-def build_majorlogin_packet(access_token: str, open_id: str, platform_type: int) -> bytes:
+import uuid as _uuid
+import random as _random
+
+# Indonesian carrier IPs (Telkomsel, XL, Indosat, Tri)
+_ID_IP_POOLS = [
+    ("180.{}.{}.{}", (247, 252), (0, 254), (1, 254)),   # Telkomsel
+    ("103.{}.{}.{}", (28, 31),   (0, 254), (1, 254)),   # Telkomsel
+    ("110.{}.{}.{}", (136, 139), (0, 254), (1, 254)),   # XL
+    ("114.{}.{}.{}", (0,   15),  (0, 254), (1, 254)),   # XL
+    ("182.{}.{}.{}", (0,   15),  (0, 254), (1, 254)),   # Indosat
+    ("202.{}.{}.{}", (138, 143), (0, 254), (1, 254)),   # Tri
+]
+_ID_CARRIERS = ["Telkomsel", "XL Axiata", "Indosat Ooredoo", "Tri Indonesia", "Smartfren"]
+
+_ANDROID_DEVICES = [
+    ("Samsung SM-A325F", "Android OS 11 / API-30", "ARM64 FP ASIMD AES VMH | 1800 | 8", "Mali-G57 MC2", "OpenGL ES 3.2", "360", 1080, 2400),
+    ("Xiaomi Redmi 9", "Android OS 10 / API-29", "ARM64 FP ASIMD AES VMH | 2000 | 8", "Mali-G52 MC2", "OpenGL ES 3.2", "340", 1080, 2340),
+    ("OPPO A54", "Android OS 10 / API-29", "ARM64 FP ASIMD AES VMH | 2000 / 6", "Adreno (TM) 610", "OpenGL ES 3.2", "320", 720, 1600),
+    ("Realme C21Y", "Android OS 11 / API-30", "ARM64 FP ASIMD AES VMH | 1800 | 8", "Mali-G57 MC2", "OpenGL ES 3.2", "300", 720, 1600),
+    ("Vivo Y21", "Android OS 11 / API-30", "ARM64 FP ASIMD AES VMH | 1800 | 8", "Mali-G57 MC2", "OpenGL ES 3.2", "310", 720, 1600),
+    ("Samsung SM-G781B", "Android OS 11 / API-30", "ARM64 FP ASIMD AES VMH | 2800 | 8", "Adreno (TM) 650", "OpenGL ES 3.2", "420", 1080, 2400),
+    ("Xiaomi Redmi Note 10", "Android OS 11 / API-30", "ARM64 FP ASIMD AES VMH | 2300 | 8", "Adreno (TM) 618", "OpenGL ES 3.2", "395", 1080, 2400),
+]
+
+def _gen_device_id_for_uid(uid: str) -> str:
+    """Generate a deterministic but unique device UUID based on UID."""
+    ns = _uuid.UUID("12345678-1234-5678-1234-567812345678")
+    return f"Google|{_uuid.uuid5(ns, uid)}"
+
+def _gen_ip_for_uid(uid: str) -> str:
+    """Generate a deterministic Indonesian IP based on UID."""
+    seed = int(uid) if uid.isdigit() else hash(uid)
+    rng = _random.Random(seed)
+    tmpl, r1, r2, r3 = rng.choice(_ID_IP_POOLS)
+    return tmpl.format(
+        rng.randint(*r1), rng.randint(*r2), rng.randint(*r3)
+    )
+
+def build_majorlogin_packet(access_token: str, open_id: str, platform_type: int, uid: str = "") -> bytes:
+    rng = _random.Random(int(uid) if uid.isdigit() else hash(uid))
+    device = rng.choice(_ANDROID_DEVICES)
+    dev_name, sw, cpu, gpu_renderer, gpu_ver, dpi, w, h = device
+
     m = MajoRLogin_pb2.MajorLogin()
     m.event_time        = str(datetime.now())[:-7]
     m.game_name         = "free fire"
     m.platform_id       = platform_type
     m.client_version    = "1.120.1"
-    m.system_software   = "Android OS 9 / API-28"
+    m.system_software   = sw
     m.system_hardware   = "Handheld"
-    m.telecom_operator  = "Verizon"
-    m.network_type      = "WIFI"
-    m.screen_width      = 1920
-    m.screen_height     = 1080
-    m.screen_dpi        = "280"
-    m.processor_details = "ARM64 FP ASIMD AES VMH | 2865 | 4"
-    m.memory            = 3003
-    m.gpu_renderer      = "Adreno (TM) 640"
-    m.gpu_version       = "OpenGL ES 3.1 v1.46"
-    m.unique_device_id  = "Google|34a7dcdf-a7d5-4cb6-8d7e-3b0e448a0c57"
-    m.client_ip         = "223.191.51.89"
-    m.language          = "en"
+    m.telecom_operator  = rng.choice(_ID_CARRIERS)
+    m.network_type      = rng.choice(["WIFI", "4G"])
+    m.screen_width      = w
+    m.screen_height     = h
+    m.screen_dpi        = dpi
+    m.processor_details = cpu
+    m.memory            = rng.choice([3003, 4096, 6144, 3072])
+    m.gpu_renderer      = gpu_renderer
+    m.gpu_version       = gpu_ver
+    m.unique_device_id  = _gen_device_id_for_uid(uid or open_id)
+    m.client_ip         = _gen_ip_for_uid(uid or open_id)
+    m.language          = "id"
     m.open_id           = open_id
     m.open_id_type      = str(platform_type)
     m.device_type       = "Handheld"
@@ -203,7 +245,7 @@ def extract_jwt_from_hex(hex_str):
 
 
 class FF_CLIENT(threading.Thread):
-    def __init__(self, uid, password):
+    def __init__(self, uid, password, status_callback=None):
         super().__init__()
         self.id = uid
         self.password = password
@@ -212,6 +254,7 @@ class FF_CLIENT(threading.Thread):
         self.auto_start_running = False
         self.auto_start_teamcode = None
         self.stop_auto = False
+        self._status_callback = status_callback
         self.get_tok()
 
     # ------------- LOGIN PART -------------
@@ -294,27 +337,55 @@ class FF_CLIENT(threading.Thread):
         while attempt < max_retries:
             try:
                 response = requests.post(
-                    url, headers=headers, data=PAYLOAD, verify=False
+                    url, headers=headers, data=PAYLOAD, verify=False, timeout=15
                 )
                 response.raise_for_status()
-                x = response.content.hex()
-                json_result = get_available_room(x)
+                raw_hex = response.content.hex()
+                logging.info(f"[LOGIN_DATA] Raw response ({len(response.content)} bytes): {raw_hex[:120]}...")
+                json_result = get_available_room(raw_hex)
                 if not json_result:
                     raise ValueError("Empty json_result from get_available_room()")
                 parsed_data = json.loads(json_result)
 
-                whisper_address = parsed_data["32"]["data"]
-                online_address = parsed_data["14"]["data"]
+                logging.info(f"[LOGIN_DATA] Fields in response: {list(parsed_data.keys())}")
 
-                # ✅ original logic jaisa hona chahiye
-                online_ip = online_address[: len(online_address) - 6]
-                whisper_ip = whisper_address[: len(whisper_address) - 6]
+                # Cari whisper address — coba field 32, lalu 44, 33, 31
+                whisper_address = None
+                for wf in ["32", "44", "33", "31", "30"]:
+                    val = parsed_data.get(wf, {}).get("data")
+                    if val and isinstance(val, str) and ":" in val:
+                        whisper_address = val
+                        logging.info(f"[LOGIN_DATA] whisper found in field {wf}: {val}")
+                        break
 
-                online_port = int(online_address[len(online_address) - 5 :])
-                whisper_port = int(whisper_address[len(whisper_address) - 5 :])
+                # Cari online address — coba field 14, 62, 13, 15
+                online_address = None
+                for of in ["14", "62", "13", "15", "16"]:
+                    val = parsed_data.get(of, {}).get("data")
+                    if val and isinstance(val, str) and ":" in val:
+                        online_address = val
+                        logging.info(f"[LOGIN_DATA] online found in field {of}: {val}")
+                        break
 
+                if not whisper_address or not online_address:
+                    # Log semua field data untuk debug
+                    for fk, fv in parsed_data.items():
+                        logging.warning(f"[LOGIN_DATA] field {fk}: {str(fv)[:120]}")
+                    raise ValueError(
+                        f"IP:port tidak ditemukan. Fields ada: {list(parsed_data.keys())}"
+                    )
+
+                # Parse IP:port dengan rsplit untuk keamanan (port bisa 4 atau 5 digit)
+                w_parts = str(whisper_address).rsplit(":", 1)
+                o_parts = str(online_address).rsplit(":", 1)
+                if len(w_parts) != 2 or len(o_parts) != 2:
+                    raise ValueError(f"Format IP:port salah — whisper={whisper_address}, online={online_address}")
+
+                whisper_ip, whisper_port = w_parts[0], int(w_parts[1])
+                online_ip, online_port = o_parts[0], int(o_parts[1])
+
+                logging.info(f"[LOGIN_DATA] whisper={whisper_ip}:{whisper_port}  online={online_ip}:{online_port}")
                 return whisper_ip, whisper_port, online_ip, online_port
-
 
             except Exception as e:
                 logging.error(
@@ -336,7 +407,7 @@ class FF_CLIENT(threading.Thread):
             "Accept-Encoding": "gzip, deflate, br",
             "Connection": "close",
         }
-        data = {
+        post_data = {
             "uid": f"{uid}",
             "password": f"{password}",
             "response_type": "token",
@@ -344,19 +415,51 @@ class FF_CLIENT(threading.Thread):
             "client_secret": "2ee44819e9b4598845141067b281621874d0d5d7af9d8f7e00c1e54715b7d1e3",
             "client_id": "100067",
         }
-        response = requests.post(url, headers=headers, data=data)
-        data = response.json()
-        NEW_ACCESS_TOKEN = data["access_token"]
-        NEW_OPEN_ID = data["open_id"]
-        OLD_ACCESS_TOKEN = (
-            "ff90c07eb9815af30a43b4a9f6019516e0e4c703b44092516d0defa4cef51f2a"
-        )
-        OLD_OPEN_ID = "996a629dbcdb3964be6b6978f5d814db"
-        time.sleep(0.2)
-        data = self.TOKEN_MAKER(
-            OLD_ACCESS_TOKEN, NEW_ACCESS_TOKEN, OLD_OPEN_ID, NEW_OPEN_ID, uid
-        )
-        return data
+
+        max_retries = 3
+        for attempt in range(1, max_retries + 1):
+            try:
+                response = requests.post(
+                    url, headers=headers, data=post_data, timeout=15, verify=False
+                )
+                resp_json = response.json()
+                logging.info(f"[OAUTH] UID={uid} status={response.status_code} keys={list(resp_json.keys())}")
+
+                if "access_token" not in resp_json:
+                    err = resp_json.get("error", resp_json.get("message", str(resp_json)))
+                    logging.error(f"[OAUTH] UID={uid} tidak dapat access_token: {err}")
+                    if attempt < max_retries:
+                        time.sleep(3 * attempt)
+                        continue
+                    return False
+
+                NEW_ACCESS_TOKEN = resp_json["access_token"]
+                NEW_OPEN_ID = resp_json["open_id"]
+                OLD_ACCESS_TOKEN = (
+                    "ff90c07eb9815af30a43b4a9f6019516e0e4c703b44092516d0defa4cef51f2a"
+                )
+                OLD_OPEN_ID = "996a629dbcdb3964be6b6978f5d814db"
+                time.sleep(0.3)
+                result = self.TOKEN_MAKER(
+                    OLD_ACCESS_TOKEN, NEW_ACCESS_TOKEN, OLD_OPEN_ID, NEW_OPEN_ID, uid
+                )
+                return result
+
+            except requests.exceptions.Timeout:
+                logging.error(f"[OAUTH] UID={uid} timeout (attempt {attempt}/{max_retries})")
+                if attempt < max_retries:
+                    time.sleep(3 * attempt)
+            except requests.exceptions.ConnectionError as e:
+                logging.error(f"[OAUTH] UID={uid} connection error: {e} (attempt {attempt}/{max_retries})")
+                if attempt < max_retries:
+                    time.sleep(3 * attempt)
+            except Exception as e:
+                logging.error(f"[OAUTH] UID={uid} unexpected error: {e} (attempt {attempt}/{max_retries})")
+                if attempt < max_retries:
+                    time.sleep(3 * attempt)
+
+        logging.error(f"[OAUTH] UID={uid} semua {max_retries} percobaan gagal")
+        return False
 
     def TOKEN_MAKER(
         self, OLD_ACCESS_TOKEN, NEW_ACCESS_TOKEN, OLD_OPEN_ID, NEW_OPEN_ID, id
@@ -373,14 +476,19 @@ class FF_CLIENT(threading.Thread):
             "ReleaseVersion": "OB54",
         }
 
-        # Try multiple platform types (Google, Facebook, Guest, Huawei)
-        for platform_type in [8, 3, 4, 6]:
+        # Try multiple platform types — platform 4 = valid untuk ID guest accounts
+        for platform_type in [4, 1, 2, 8, 3, 6]:
             try:
-                payload = build_majorlogin_packet(NEW_ACCESS_TOKEN, NEW_OPEN_ID, platform_type)
+                payload = build_majorlogin_packet(NEW_ACCESS_TOKEN, NEW_OPEN_ID, platform_type, uid=str(id))
                 RESPONSE = requests.post(
                     MAJOR_LOGIN_URL, headers=MAJOR_LOGIN_HEADERS, data=payload, verify=False, timeout=15
                 )
+                logging.info(
+                    f"[TOKEN_MAKER] platform={platform_type} status={RESPONSE.status_code} "
+                    f"size={len(RESPONSE.content)} hex={RESPONSE.content.hex()[:60]}..."
+                )
                 if RESPONSE.status_code != 200 or len(RESPONSE.content) < 10:
+                    logging.warning(f"[TOKEN_MAKER] platform={platform_type} skip: bad status/size")
                     continue
 
                 # Parse raw MajorLoginRes to get server_url too
@@ -388,10 +496,20 @@ class FF_CLIENT(threading.Thread):
                 dec_data = dec_new(RESPONSE.content)
                 try:
                     res_obj.ParseFromString(dec_data)
-                except Exception:
-                    res_obj.ParseFromString(RESPONSE.content)
+                except Exception as pe:
+                    logging.warning(f"[TOKEN_MAKER] decrypt parse failed ({pe}), trying raw")
+                    try:
+                        res_obj.ParseFromString(RESPONSE.content)
+                    except Exception as pe2:
+                        logging.warning(f"[TOKEN_MAKER] raw parse also failed: {pe2}")
+                        continue
 
+                logging.info(
+                    f"[TOKEN_MAKER] platform={platform_type} token={'<set>' if res_obj.token else '<empty>'} "
+                    f"server_url={res_obj.server_url!r}"
+                )
                 if not res_obj.token:
+                    logging.warning(f"[TOKEN_MAKER] platform={platform_type} token kosong, skip")
                     continue
 
                 # Check banned
@@ -649,9 +767,22 @@ class FF_CLIENT(threading.Thread):
 
         clients = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         whisper_port = int(whisper_port)
-        clients.connect((whisper_ip, whisper_port))
+        clients.settimeout(15)
+        try:
+            clients.connect((whisper_ip, whisper_port))
+        except Exception as e:
+            logging.error(f"[WHISPER] Gagal connect ke {whisper_ip}:{whisper_port}: {e}")
+            raise
+        clients.settimeout(None)
         clients.send(bytes.fromhex(tok))
         logging.info(f"[WHISPER] Connected to {whisper_ip}:{whisper_port}")
+
+        # Beritahu dashboard bahwa bot sudah online
+        if self._status_callback:
+            try:
+                self._status_callback("online")
+            except Exception:
+                pass
 
         thread = threading.Thread(
             target=self.sockf1, args=(tok, online_ip, online_port)
