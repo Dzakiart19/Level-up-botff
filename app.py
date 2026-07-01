@@ -164,47 +164,18 @@ def _gen_ip_for_uid(uid: str) -> str:
     )
 
 def build_majorlogin_packet(access_token: str, open_id: str, platform_type: int, uid: str = "") -> bytes:
-    rng = _random.Random(int(uid) if uid.isdigit() else hash(uid))
-    device = rng.choice(_ANDROID_DEVICES)
-    dev_name, sw, cpu, gpu_renderer, gpu_ver, dpi, w, h = device
-
+    """Minimal packet — only essential auth fields to stay under proxy size limit."""
     m = MajoRLogin_pb2.MajorLogin()
-    m.event_time        = str(datetime.now())[:-7]
-    m.game_name         = "free fire"
-    m.platform_id       = platform_type
-    m.client_version    = "1.120.1"
-    m.system_software   = sw
-    m.system_hardware   = "Handheld"
-    m.telecom_operator  = rng.choice(_ID_CARRIERS)
-    m.network_type      = rng.choice(["WIFI", "4G"])
-    m.screen_width      = w
-    m.screen_height     = h
-    m.screen_dpi        = dpi
-    m.processor_details = cpu
-    m.memory            = rng.choice([3003, 4096, 6144, 3072])
-    m.gpu_renderer      = gpu_renderer
-    m.gpu_version       = gpu_ver
-    m.unique_device_id  = _gen_device_id_for_uid(uid or open_id)
-    m.client_ip         = _gen_ip_for_uid(uid or open_id)
-    m.language          = "id"
-
-    # GameSecurity (memory_available field) — anti-cheat token required by Garena
-    import hashlib as _hashlib
-    gs = m.memory_available
-    gs.version = 1
-    _seed_str = f"{uid or open_id}|{sw}|{cpu}"
-    gs.hidden_value = _hashlib.md5(_seed_str.encode()).digest()
-
-    m.open_id           = open_id
-    m.open_id_type      = str(platform_type)
-    m.device_type       = "Handheld"
-    m.access_token      = access_token
-    m.platform_sdk_id   = 1
+    m.event_time          = str(datetime.now())[:-7]
+    m.game_name           = "free fire"
+    m.platform_id         = platform_type
+    m.client_version      = "1.120.1"
+    m.open_id             = open_id
+    m.open_id_type        = str(platform_type)
+    m.access_token        = access_token
     m.client_using_version = "7428b253defc164018c604a1ebbfebdf"
-    m.login_by          = 3
-    m.channel_type      = 3
-    m.cpu_type          = 2
-    m.cpu_architecture  = "64"
+    m.login_by            = 3
+    m.channel_type        = 3
     m.client_version_code = "2019118695"
     m.login_open_id_type  = platform_type
     m.origin_platform_type  = str(platform_type)
@@ -477,13 +448,10 @@ class FF_CLIENT(threading.Thread):
     def TOKEN_MAKER(
         self, OLD_ACCESS_TOKEN, NEW_ACCESS_TOKEN, OLD_OPEN_ID, NEW_OPEN_ID, id
     ):
-        MAJOR_LOGIN_URL = "https://loginbp.ggpolarbear.com/MajorLogin"
+        MAJOR_LOGIN_URL = "https://ffbot.galerizaki.workers.dev/?url=https://loginbp.ggpolarbear.com/MajorLogin"
         MAJOR_LOGIN_HEADERS = {
             "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 11; SM-S908E Build/TP1A.220624.014)",
-            "Connection": "Keep-Alive",
-            "Accept-Encoding": "gzip",
             "Content-Type": "application/octet-stream",
-            "Expect": "100-continue",
             "X-GA": "v1 1",
             "X-Unity-Version": "2018.4.11f1",
             "ReleaseVersion": "OB54",
