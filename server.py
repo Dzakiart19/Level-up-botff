@@ -113,14 +113,15 @@ def start_bot(uid):
         return jsonify({"ok": False, "msg": "Akun tidak ditemukan"})
     if bot_status.get(uid) in ("online", "connecting"):
         return jsonify({"ok": False, "msg": "Bot sudah berjalan"})
+    name = acc.get("name") or acc.get("nickname") or acc["uid"]
     t = threading.Thread(
         target=run_bot,
-        args=(acc["uid"], acc["password"], acc["name"]),
+        args=(acc["uid"], acc["password"], name),
         daemon=True
     )
     bot_threads[uid] = t
     t.start()
-    return jsonify({"ok": True, "msg": f"Bot {acc['name']} dimulai"})
+    return jsonify({"ok": True, "msg": f"Bot {name} dimulai"})
 
 @app.route("/api/stop/<uid>", methods=["POST"])
 def stop_bot(uid):
@@ -136,9 +137,10 @@ def start_all():
         uid = acc["uid"]
         if bot_status.get(uid) in ("online", "connecting"):
             continue
+        name = acc.get("name") or acc.get("nickname") or acc["uid"]
         t = threading.Thread(
             target=run_bot,
-            args=(acc["uid"], acc["password"], acc["name"]),
+            args=(acc["uid"], acc["password"], name),
             daemon=True
         )
         bot_threads[uid] = t
