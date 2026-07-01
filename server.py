@@ -101,6 +101,8 @@ def api_accounts():
     for acc in accounts:
         uid = acc.get("uid")
         acc["status"] = bot_status.get(uid, "offline")
+        if "name" not in acc:
+            acc["name"] = acc.get("nickname", acc.get("uid", "Bot"))
     return jsonify(accounts)
 
 @app.route("/api/start/<uid>", methods=["POST"])
