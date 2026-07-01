@@ -1,1 +1,392 @@
-[]
+[
+  {
+    "uid": "5432027500",
+    "password": "VAIBHAV_LXML6C-VAIBHAVR515P_",
+    "region": "id",
+    "nickname": "Vaibhav⁹¹⁶⁷³"
+  },
+  {
+    "uid": "5432027473",
+    "password": "VAIBHAV_Q9PPSD-VAIBHAVU9W3ZV",
+    "region": "id",
+    "nickname": "Vaibhav⁴³⁴⁹⁵"
+  },
+  {
+    "uid": "5432027409",
+    "password": "VAIBHAV_L7BF_J-VAIBHAV-9L0DZ",
+    "region": "id",
+    "nickname": "Vaibhav²⁰⁶⁸⁶"
+  },
+  {
+    "uid": "5432027420",
+    "password": "VAIBHAV_X2SSHT-VAIBHAVB8FJDO",
+    "region": "id",
+    "nickname": "Vaibhav³³¹⁸⁴"
+  },
+  {
+    "uid": "5432027406",
+    "password": "VAIBHAV_Q31BDY-VAIBHAV.6ZJ-Y",
+    "region": "id",
+    "nickname": "Vaibhav⁸⁰⁸⁴¹"
+  },
+  {
+    "uid": "5432027122",
+    "password": "VAIBHAV_JZSUF_-VAIBHAV1K-3TZ",
+    "region": "id",
+    "nickname": "Vaibhav¹⁶⁵³¹"
+  },
+  {
+    "uid": "5432027286",
+    "password": "VAIBHAV_0DEG_1-VAIBHAVASGR05",
+    "region": "id",
+    "nickname": "Vaibhav⁰²⁷³⁸"
+  },
+  {
+    "uid": "5432027282",
+    "password": "VAIBHAV_LFBKLQ-VAIBHAVOFR4HT",
+    "region": "id",
+    "nickname": "Vaibhav²⁰⁸⁹⁶"
+  },
+  {
+    "uid": "5432027146",
+    "password": "VAIBHAV_LPQ62F-VAIBHAVMJX1YB",
+    "region": "id",
+    "nickname": "Vaibhav⁸⁷²⁷⁸"
+  },
+  {
+    "uid": "5432027258",
+    "password": "VAIBHAV_X4H9D0-VAIBHAVVZ2P.O",
+    "region": "id",
+    "nickname": "Vaibhav²⁹⁵¹⁵"
+  },
+  {
+    "uid": "5432027163",
+    "password": "VAIBHAV_H0ARG0-VAIBHAV5B1LSJ",
+    "region": "id",
+    "nickname": "Vaibhav¹⁵²⁷¹"
+  },
+  {
+    "uid": "5432027133",
+    "password": "VAIBHAV_5HK15V-VAIBHAV7NU1YR",
+    "region": "id",
+    "nickname": "Vaibhav¹¹²⁹⁹"
+  },
+  {
+    "uid": "5432027889",
+    "password": "VAIBHAV_NUD.CQ-VAIBHAVBOYQIC",
+    "region": "id",
+    "nickname": "Vaibhav²⁹¹⁸³"
+  },
+  {
+    "uid": "5432027759",
+    "password": "VAIBHAV__6GMZB-VAIBHAV8J3W_I",
+    "region": "id",
+    "nickname": "Vaibhav⁴⁸¹⁸²"
+  },
+  {
+    "uid": "5432027754",
+    "password": "VAIBHAV_N-.WEV-VAIBHAV3CZD69",
+    "region": "id",
+    "nickname": "Vaibhav³¹⁷¹¹"
+  },
+  {
+    "uid": "5432027784",
+    "password": "VAIBHAV_UAU2RQ-VAIBHAV_D1FLB",
+    "region": "id",
+    "nickname": "Vaibhav⁵⁰⁰⁹⁷"
+  },
+  {
+    "uid": "5432027617",
+    "password": "VAIBHAV_M9FZUJ-VAIBHAVJQ_9G_",
+    "region": "id",
+    "nickname": "Vaibhav⁴¹⁰⁷²"
+  },
+  {
+    "uid": "5432027758",
+    "password": "VAIBHAV_F0_30J-VAIBHAV3IDMHD",
+    "region": "id",
+    "nickname": "Vaibhav¹¹⁴²⁹"
+  },
+  {
+    "uid": "5432027614",
+    "password": "VAIBHAV_1H.TI7-VAIBHAVHFBGN8",
+    "region": "id",
+    "nickname": "Vaibhav⁸⁰⁷⁰²"
+  },
+  {
+    "uid": "5432027919",
+    "password": "VAIBHAV_-NVKRH-VAIBHAVHM-KNR",
+    "region": "id",
+    "nickname": "Vaibhav⁰⁰⁷⁶⁴"
+  },
+  {
+    "uid": "5432027988",
+    "password": "VAIBHAV_FVJFF6-VAIBHAVN20LME",
+    "region": "id",
+    "nickname": "Vaibhav⁸¹⁵⁷¹"
+  },
+  {
+    "uid": "5432027779",
+    "password": "VAIBHAV_.KIO_3-VAIBHAV_U1DVR",
+    "region": "id",
+    "nickname": "Vaibhav⁰⁴⁰⁴⁹"
+  },
+  {
+    "uid": "5432027929",
+    "password": "VAIBHAV_AXJ3CG-VAIBHAV3Y15L6",
+    "region": "id",
+    "nickname": "Vaibhav⁰⁵⁶⁶⁸"
+  },
+  {
+    "uid": "5432028206",
+    "password": "VAIBHAV_EXV6MX-VAIBHAV729YLB",
+    "region": "id",
+    "nickname": "Vaibhav⁶²⁷⁶⁰"
+  },
+  {
+    "uid": "5432028205",
+    "password": "VAIBHAV_PGH1OK-VAIBHAVA8SW.J",
+    "region": "id",
+    "nickname": "Vaibhav²⁸⁶⁵⁸"
+  },
+  {
+    "uid": "5432028010",
+    "password": "VAIBHAV_52MPUP-VAIBHAV-YCTRA",
+    "region": "id",
+    "nickname": "Vaibhav⁷⁶⁹⁵⁸"
+  },
+  {
+    "uid": "5432027783",
+    "password": "VAIBHAV__IE54B-VAIBHAVFSKVXA",
+    "region": "id",
+    "nickname": "Vaibhav⁹⁵¹⁶⁶"
+  },
+  {
+    "uid": "5432028196",
+    "password": "VAIBHAV_7ZSN9W-VAIBHAVPXQ7_E",
+    "region": "id",
+    "nickname": "Vaibhav¹⁴²⁶⁴"
+  },
+  {
+    "uid": "5432028237",
+    "password": "VAIBHAV_ZSD4NI-VAIBHAVY59-9I",
+    "region": "id",
+    "nickname": "Vaibhav³²⁸⁰⁸"
+  },
+  {
+    "uid": "5432028198",
+    "password": "VAIBHAV_RQW5BN-VAIBHAV1_CM5C",
+    "region": "id",
+    "nickname": "Vaibhav⁹⁴⁸⁹⁹"
+  },
+  {
+    "uid": "5432028228",
+    "password": "VAIBHAV_TK-PR--VAIBHAVGISG5R",
+    "region": "id",
+    "nickname": "Vaibhav⁸⁹⁸¹⁵"
+  },
+  {
+    "uid": "5432028899",
+    "password": "VAIBHAV_97F1CU-VAIBHAVB2E4Z2",
+    "region": "id",
+    "nickname": "Vaibhav⁹⁸⁴⁸⁶"
+  },
+  {
+    "uid": "5432028978",
+    "password": "VAIBHAV_SXSQPC-VAIBHAVC0FTL7",
+    "region": "id",
+    "nickname": "Vaibhav³⁴¹⁹⁸"
+  },
+  {
+    "uid": "5432029044",
+    "password": "VAIBHAV_6B566M-VAIBHAVVWC2OD",
+    "region": "id",
+    "nickname": "Vaibhav²⁹⁴¹³"
+  },
+  {
+    "uid": "5432029355",
+    "password": "VAIBHAV_V4GTDG-VAIBHAVI81994",
+    "region": "id",
+    "nickname": "Vaibhav⁸⁰⁶⁰⁴"
+  },
+  {
+    "uid": "5432029499",
+    "password": "VAIBHAV_80GJQX-VAIBHAV7.Y88W",
+    "region": "id",
+    "nickname": "Vaibhav⁸²⁸⁸⁸"
+  },
+  {
+    "uid": "5432028909",
+    "password": "VAIBHAV__.DMKP-VAIBHAVKMQWFM",
+    "region": "id",
+    "nickname": "Vaibhav³¹⁰⁵³"
+  },
+  {
+    "uid": "5432028894",
+    "password": "VAIBHAV_YJXFR.-VAIBHAVOYULPT",
+    "region": "id",
+    "nickname": "Vaibhav⁸⁹³⁷²"
+  },
+  {
+    "uid": "5432029550",
+    "password": "VAIBHAV_2650W8-VAIBHAV3FM211",
+    "region": "id",
+    "nickname": "Vaibhav⁹⁶⁸⁹⁵"
+  },
+  {
+    "uid": "5432030398",
+    "password": "VAIBHAV_28IBP3-VAIBHAVD380VH",
+    "region": "id",
+    "nickname": "Vaibhav⁹³⁴¹⁵"
+  },
+  {
+    "uid": "5432029961",
+    "password": "VAIBHAV_.ACXB9-VAIBHAVJD77WG",
+    "region": "id",
+    "nickname": "Vaibhav¹³³²¹"
+  },
+  {
+    "uid": "5432030091",
+    "password": "VAIBHAV_5CONVX-VAIBHAVRX5.X8",
+    "region": "id",
+    "nickname": "Vaibhav⁵¹⁰¹⁹"
+  },
+  {
+    "uid": "5432030454",
+    "password": "VAIBHAV_RS9_NA-VAIBHAVWCKP3-",
+    "region": "id",
+    "nickname": "Vaibhav⁸²⁵⁷⁵"
+  },
+  {
+    "uid": "5432030569",
+    "password": "VAIBHAV_9896._-VAIBHAVN7.3G9",
+    "region": "id",
+    "nickname": "Vaibhav⁸⁶⁸¹⁵"
+  },
+  {
+    "uid": "5432030546",
+    "password": "VAIBHAV_GEBY.D-VAIBHAVWHD2RD",
+    "region": "id",
+    "nickname": "Vaibhav⁷⁷⁶⁹³"
+  },
+  {
+    "uid": "5432030699",
+    "password": "VAIBHAV__F8V0O-VAIBHAVR2-O2H",
+    "region": "id",
+    "nickname": "Vaibhav⁰⁵³⁸⁷"
+  },
+  {
+    "uid": "5432030848",
+    "password": "VAIBHAV_1EGWU4-VAIBHAV77FHJL",
+    "region": "id",
+    "nickname": "Vaibhav⁵⁷⁶²¹"
+  },
+  {
+    "uid": "5432031159",
+    "password": "VAIBHAV_PKCMJ7-VAIBHAVAO9A-6",
+    "region": "id",
+    "nickname": "Vaibhav³⁴¹²⁴"
+  },
+  {
+    "uid": "5432030847",
+    "password": "VAIBHAV_ME0OVE-VAIBHAVZ7Z.1T",
+    "region": "id",
+    "nickname": "Vaibhav³⁰⁵³³"
+  },
+  {
+    "uid": "5432030822",
+    "password": "VAIBHAV_Z6.3.8-VAIBHAV6P6WBJ",
+    "region": "id",
+    "nickname": "Vaibhav⁷¹⁷¹⁴"
+  },
+  {
+    "uid": "5432030893",
+    "password": "VAIBHAV_V_81DG-VAIBHAVG6DI21",
+    "region": "id",
+    "nickname": "Vaibhav³⁴⁴¹⁵"
+  },
+  {
+    "uid": "5432030862",
+    "password": "VAIBHAV_I-EUGZ-VAIBHAVZ7KVT2",
+    "region": "id",
+    "nickname": "Vaibhav⁷⁴¹²⁶"
+  },
+  {
+    "uid": "5432031393",
+    "password": "VAIBHAV_CK8_NS-VAIBHAV9LPYIO",
+    "region": "id",
+    "nickname": "Vaibhav²³⁹¹⁹"
+  },
+  {
+    "uid": "5432031497",
+    "password": "VAIBHAV_R0H4ER-VAIBHAV_SL8S2",
+    "region": "id",
+    "nickname": "Vaibhav⁵⁰²⁸⁷"
+  },
+  {
+    "uid": "5432031592",
+    "password": "VAIBHAV_9VJDHP-VAIBHAV6RME5G",
+    "region": "id",
+    "nickname": "Vaibhav²⁷²⁵⁷"
+  },
+  {
+    "uid": "5432031531",
+    "password": "VAIBHAV_XPL.5O-VAIBHAVK-8DBI",
+    "region": "id",
+    "nickname": "Vaibhav¹⁶⁶³¹"
+  },
+  {
+    "uid": "5432031535",
+    "password": "VAIBHAV_.1BZIV-VAIBHAVC8.W_U",
+    "region": "id",
+    "nickname": "Vaibhav²¹⁷¹¹"
+  },
+  {
+    "uid": "5432031593",
+    "password": "VAIBHAV_36MBIA-VAIBHAVA94R5V",
+    "region": "id",
+    "nickname": "Vaibhav⁶⁶⁰⁹⁶"
+  },
+  {
+    "uid": "5432032114",
+    "password": "VAIBHAV_17U2HH-VAIBHAVV10GSV",
+    "region": "id",
+    "nickname": "Vaibhav¹¹⁸³⁸"
+  },
+  {
+    "uid": "5432031903",
+    "password": "VAIBHAV_CGF683-VAIBHAVUQDW54",
+    "region": "id",
+    "nickname": "Vaibhav⁹⁶⁶⁰⁷"
+  },
+  {
+    "uid": "5432031808",
+    "password": "VAIBHAV_4XE9KH-VAIBHAV3XCXC.",
+    "region": "id",
+    "nickname": "Vaibhav³⁹¹⁵¹"
+  },
+  {
+    "uid": "5432032161",
+    "password": "VAIBHAV_ZA7HFR-VAIBHAV9_QKU2",
+    "region": "id",
+    "nickname": "Vaibhav⁵⁵⁸²⁷"
+  },
+  {
+    "uid": "5432031830",
+    "password": "VAIBHAV_FFKABI-VAIBHAVE9-T91",
+    "region": "id",
+    "nickname": "Vaibhav⁶⁸⁶⁸⁵"
+  },
+  {
+    "uid": "5432032317",
+    "password": "VAIBHAV_3GDBN7-VAIBHAVWDTLIQ",
+    "region": "id",
+    "nickname": "Vaibhav⁸⁵⁸⁰⁶"
+  },
+  {
+    "uid": "5432032331",
+    "password": "VAIBHAV_RD.E1S-VAIBHAVLK_.IR",
+    "region": "id",
+    "nickname": "Vaibhav⁵⁹⁶⁴⁶"
+  }
+]
