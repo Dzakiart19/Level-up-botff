@@ -22,9 +22,10 @@ from google.protobuf.json_format import MessageToJson
 
 import jwt_generator_pb2
 import MajorLoginRes_pb2
+import MajoRLogin_pb2
 
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import pad
+from Crypto.Util.Padding import pad, unpad
 
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -56,11 +57,26 @@ clients = None
 g_token = None
 
 
+class BotRestartException(Exception):
+    """Raised instead of os.execl() when running inside the Flask dashboard."""
+    pass
+
+
+class BotBannedException(Exception):
+    """Raised when the account is banned by Garena."""
+    pass
+
+
 def restart_program():
+    """In dashboard mode (non-main thread), raise an exception so the bot
+    thread dies cleanly without killing the Flask server process."""
+    import threading
+    if threading.current_thread() is not threading.main_thread():
+        logging.warning("Bot restart requested from daemon thread — raising BotRestartException")
+        raise BotRestartException("Bot needs restart")
     logging.warning("Initiating bot restart...")
     try:
         p = psutil.Process(os.getpid())
-        # Deprecation warning aati hai, par abhi ignore kar sakte ho
         for handler in p.open_files() + p.connections():
             try:
                 os.close(handler.fd)
@@ -91,6 +107,59 @@ def encrypt_api(plain_text):
     cipher = AES.new(key, AES.MODE_CBC, iv)
     cipher_text = cipher.encrypt(pad(plain_text, AES.block_size))
     return cipher_text.hex()
+
+
+# AES keys used by the new login method (from ggpolarbear endpoint)
+_AES_KEY = b'Yg&tc%DEuh6%Zc^8'
+_AES_IV  = b'6oyZDr22E3ychjM%'
+
+
+def enc_new(data: bytes) -> bytes:
+    return AES.new(_AES_KEY, AES.MODE_CBC, _AES_IV).encrypt(pad(data, 16))
+
+
+def dec_new(data: bytes) -> bytes:
+    try:
+        return unpad(AES.new(_AES_KEY, AES.MODE_CBC, _AES_IV).decrypt(data), 16)
+    except Exception:
+        return data
+
+
+def build_majorlogin_packet(access_token: str, open_id: str, platform_type: int) -> bytes:
+    m = MajoRLogin_pb2.MajorLogin()
+    m.event_time        = str(datetime.now())[:-7]
+    m.game_name         = "free fire"
+    m.platform_id       = platform_type
+    m.client_version    = "1.120.1"
+    m.system_software   = "Android OS 9 / API-28"
+    m.system_hardware   = "Handheld"
+    m.telecom_operator  = "Verizon"
+    m.network_type      = "WIFI"
+    m.screen_width      = 1920
+    m.screen_height     = 1080
+    m.screen_dpi        = "280"
+    m.processor_details = "ARM64 FP ASIMD AES VMH | 2865 | 4"
+    m.memory            = 3003
+    m.gpu_renderer      = "Adreno (TM) 640"
+    m.gpu_version       = "OpenGL ES 3.1 v1.46"
+    m.unique_device_id  = "Google|34a7dcdf-a7d5-4cb6-8d7e-3b0e448a0c57"
+    m.client_ip         = "223.191.51.89"
+    m.language          = "en"
+    m.open_id           = open_id
+    m.open_id_type      = str(platform_type)
+    m.device_type       = "Handheld"
+    m.access_token      = access_token
+    m.platform_sdk_id   = 1
+    m.client_using_version = "7428b253defc164018c604a1ebbfebdf"
+    m.login_by          = 3
+    m.channel_type      = 3
+    m.cpu_type          = 2
+    m.cpu_architecture  = "64"
+    m.client_version_code = "2019118695"
+    m.login_open_id_type  = platform_type
+    m.origin_platform_type  = str(platform_type)
+    m.primary_platform_type = str(platform_type)
+    return enc_new(m.SerializeToString())
 
 
 def parse_results(parsed_results):
@@ -148,7 +217,11 @@ class FF_CLIENT(threading.Thread):
     # ------------- LOGIN PART -------------
     def parse_my_message(self, serialized_data):
         MajorLogRes = MajorLoginRes_pb2.MajorLoginRes()
-        MajorLogRes.ParseFromString(serialized_data)
+        # Try decrypting first (new ggpolarbear endpoint), fallback to raw
+        try:
+            MajorLogRes.ParseFromString(dec_new(serialized_data))
+        except Exception:
+            MajorLogRes.ParseFromString(serialized_data)
 
         timestamp = MajorLogRes.kts
         key = MajorLogRes.ak
@@ -161,7 +234,7 @@ class FF_CLIENT(threading.Thread):
         combined_timestamp = timestamp_seconds * 1_000_000_000 + timestamp_nanos
         return combined_timestamp, key, iv, BASE64_TOKEN
 
-    def GET_PAYLOAD_BY_DATA(self, JWT_TOKEN, NEW_ACCESS_TOKEN, date):
+    def GET_PAYLOAD_BY_DATA(self, JWT_TOKEN, NEW_ACCESS_TOKEN, date, server_url=None):
         token_payload_base64 = JWT_TOKEN.split(".")[1]
         token_payload_base64 += "=" * ((4 - len(token_payload_base64) % 4) % 4)
         decoded_payload = base64.urlsafe_b64decode(token_payload_base64).decode(
@@ -194,21 +267,23 @@ class FF_CLIENT(threading.Thread):
         PAYLOAD = encrypt_api(PAYLOAD)
         PAYLOAD = bytes.fromhex(PAYLOAD)
         whisper_ip, whisper_port, online_ip, online_port = self.GET_LOGIN_DATA(
-            JWT_TOKEN, PAYLOAD
+            JWT_TOKEN, PAYLOAD, server_url=server_url
         )
         return whisper_ip, whisper_port, online_ip, online_port
 
-    def GET_LOGIN_DATA(self, JWT_TOKEN, PAYLOAD):
-        url = "https://client.ind.freefiremobile.com/GetLoginData"
+    def GET_LOGIN_DATA(self, JWT_TOKEN, PAYLOAD, server_url=None):
+        base = (server_url or "https://clientbp.ggpolarbear.com").rstrip("/")
+        url = f"{base}/GetLoginData"
+        host = base.replace("https://", "").replace("http://", "")
         headers = {
             "Expect": "100-continue",
             "Authorization": f"Bearer {JWT_TOKEN}",
             "X-Unity-Version": "2018.4.11f1",
             "X-GA": "v1 1",
-            "ReleaseVersion": "Ob51",
+            "ReleaseVersion": "OB54",
             "Content-Type": "application/x-www-form-urlencoded",
-            "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 9; G011A Build/PI)",
-            "Host": "clientbp.common.ggbluefox.com",
+            "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 11; SM-S908E Build/TP1A.220624.014)",
+            "Host": host,
             "Connection": "close",
             "Accept-Encoding": "gzip, deflate, br",
         }
@@ -286,52 +361,77 @@ class FF_CLIENT(threading.Thread):
     def TOKEN_MAKER(
         self, OLD_ACCESS_TOKEN, NEW_ACCESS_TOKEN, OLD_OPEN_ID, NEW_OPEN_ID, id
     ):
-        headers = {
-            "X-Unity-Version": "2018.4.11f1",
-            "ReleaseVersion": "Ob51",
-            "Content-Type": "application/x-www-form-urlencoded",
-            "X-GA": "v1 1",
-            "Content-Length": "928",
-            "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 7.1.2; ASUS_Z01QD Build/QKQ1.190825.002)",
-            "Host": "loginbp.ggblueshark.com",
+        MAJOR_LOGIN_URL = "https://loginbp.ggpolarbear.com/MajorLogin"
+        MAJOR_LOGIN_HEADERS = {
+            "User-Agent": "Dalvik/2.1.0 (Linux; U; Android 11; SM-S908E Build/TP1A.220624.014)",
             "Connection": "Keep-Alive",
             "Accept-Encoding": "gzip",
+            "Content-Type": "application/octet-stream",
+            "Expect": "100-continue",
+            "X-GA": "v1 1",
+            "X-Unity-Version": "2018.4.11f1",
+            "ReleaseVersion": "OB54",
         }
-        data = bytes.fromhex(
-            "1a13323032352d30372d33302031313a30323a3531220966726565206669726528013a07312e3131382e31422c416e64726f6964204f5320372e312e32202f204150492d323320284e32473438482f373030323530323234294a0848616e6468656c645207416e64726f69645a045749464960c00c68840772033332307a1f41524d7637205646507633204e454f4e20564d48207c2032343635207c203480019a1b8a010f416472656e6f2028544d292036343092010d4f70656e474c20455320332e319a012b476f6f676c657c31663361643662372d636562342d343934622d383730622d623164616364373230393131a2010c3139372e312e31322e313335aa0102656eb201203939366136323964626364623339363462653662363937386635643831346462ba010134c2010848616e6468656c64ca011073616d73756e6720534d2d473935354eea014066663930633037656239383135616633306134336234613966363031393531366530653463373033623434303932353136643064656661346365663531663261f00101ca0207416e64726f6964d2020457494649ca03203734323862323533646566633136343031386336303461316562626665626466e003daa907e803899b07f003bf0ff803ae088004999b078804daa9079004999b079804daa907c80403d204262f646174612f6170702f636f6d2e6474732e667265656669726574682d312f6c69622f61726de00401ea044832303837663631633139663537663261663465376665666630623234643964397c2f646174612f6170702f636f6d2e6474732e667265656669726574682d312f626173652e61706bf00403f804018a050233329a050a32303139313138363933a80503b205094f70656e474c455332b805ff7fc00504e005dac901ea0507616e64726f6964f2055c4b71734854394748625876574c6668437950416c52526873626d43676542557562555551317375746d525536634e30524f3751453141486e496474385963784d614c575437636d4851322b7374745279377830663935542b6456593d8806019006019a060134a2060134b2061e40001147550d0c074f530b4d5c584d57416657545a065f2a091d6a0d5033"
-        )
-        data = data.replace(OLD_OPEN_ID.encode(), NEW_OPEN_ID.encode())
-        data = data.replace(OLD_ACCESS_TOKEN.encode(), NEW_ACCESS_TOKEN.encode())
-        hex_data = data.hex()
-        d = encrypt_api(hex_data)
-        Final_Payload = bytes.fromhex(d)
-        URL = "https://loginbp.ggblueshark.com/MajorLogin"
 
-        RESPONSE = requests.post(URL, headers=headers, data=Final_Payload, verify=False)
+        # Try multiple platform types (Google, Facebook, Guest, Huawei)
+        for platform_type in [8, 3, 4, 6]:
+            try:
+                payload = build_majorlogin_packet(NEW_ACCESS_TOKEN, NEW_OPEN_ID, platform_type)
+                RESPONSE = requests.post(
+                    MAJOR_LOGIN_URL, headers=MAJOR_LOGIN_HEADERS, data=payload, verify=False, timeout=15
+                )
+                if RESPONSE.status_code != 200 or len(RESPONSE.content) < 10:
+                    continue
 
-        combined_timestamp, key, iv, BASE64_TOKEN = self.parse_my_message(
-            RESPONSE.content
-        )
-        if RESPONSE.status_code == 200:
-            if len(RESPONSE.text) < 10:
-                return False
-            whisper_ip, whisper_port, online_ip, online_port = self.GET_PAYLOAD_BY_DATA(
-                BASE64_TOKEN, NEW_ACCESS_TOKEN, 1
-            )
-            self.key = key
-            self.iv = iv
-            return (
-                BASE64_TOKEN,
-                key,
-                iv,
-                combined_timestamp,
-                whisper_ip,
-                whisper_port,
-                online_ip,
-                online_port,
-            )
-        else:
-            return False
+                # Parse raw MajorLoginRes to get server_url too
+                res_obj = MajorLoginRes_pb2.MajorLoginRes()
+                dec_data = dec_new(RESPONSE.content)
+                try:
+                    res_obj.ParseFromString(dec_data)
+                except Exception:
+                    res_obj.ParseFromString(RESPONSE.content)
+
+                if not res_obj.token:
+                    continue
+
+                # Check banned
+                if res_obj.blacklist and res_obj.blacklist.ban_reason:
+                    logging.warning(f"Account banned (reason={res_obj.blacklist.ban_reason})")
+                    raise BotBannedException(f"Account banned by Garena (reason={res_obj.blacklist.ban_reason})")
+
+                BASE64_TOKEN = res_obj.token
+                key = res_obj.ak
+                iv  = res_obj.aiv
+                kts = res_obj.kts
+                server_url = res_obj.server_url or "https://clientbp.ggpolarbear.com"
+
+                # Parse timestamp
+                timestamp_obj = Timestamp()
+                timestamp_obj.FromNanoseconds(kts)
+                combined_timestamp = timestamp_obj.seconds * 1_000_000_000 + timestamp_obj.nanos
+
+                whisper_ip, whisper_port, online_ip, online_port = self.GET_PAYLOAD_BY_DATA(
+                    BASE64_TOKEN, NEW_ACCESS_TOKEN, 1, server_url=server_url
+                )
+                self.key = key
+                self.iv = iv
+                return (
+                    BASE64_TOKEN,
+                    key,
+                    iv,
+                    combined_timestamp,
+                    whisper_ip,
+                    whisper_port,
+                    online_ip,
+                    online_port,
+                )
+            except BotBannedException:
+                raise
+            except Exception as e:
+                logging.warning(f"TOKEN_MAKER platform_type={platform_type} failed: {e}")
+                continue
+
+        return False
 
     def nmnmmmmn(self, data_hex):
         key, iv = self.key, self.iv
@@ -494,6 +594,16 @@ class FF_CLIENT(threading.Thread):
 
 
 
+    def _close_whisper(self):
+        """Close the whisper socket to unblock connect() recv loop."""
+        global clients
+        try:
+            if clients:
+                clients.shutdown(socket.SHUT_RDWR)
+                clients.close()
+        except Exception:
+            pass
+
     def sockf1(self, tok, online_ip, online_port):
         global socket_client
         socket_client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -504,9 +614,9 @@ class FF_CLIENT(threading.Thread):
             socket_client.connect((online_ip, online_port))
         except Exception as e:
             logging.error(
-                f"[ONLINE] Failed to connect to {online_ip}:{online_port}: {e}. Restarting."
+                f"[ONLINE] Failed to connect to {online_ip}:{online_port}: {e}. Closing whisper."
             )
-            restart_program()
+            self._close_whisper()
             return
 
         socket_client.settimeout(None)
@@ -517,12 +627,19 @@ class FF_CLIENT(threading.Thread):
             try:
                 data2 = socket_client.recv(4096)
                 if data2 == b"":
-                    logging.error("Online socket closed by remote host. Restarting.")
-                    restart_program()
+                    logging.error("Online socket closed by remote host. Closing whisper.")
+                    self._close_whisper()
                     break
+            except BotRestartException:
+                self._close_whisper()
+                raise
+            except BotBannedException:
+                self._close_whisper()
+                raise
             except Exception as e:
-                logging.critical(f"Unhandled error in sockf1 loop: {e}. Restarting.")
-                restart_program()
+                if "Bad file descriptor" not in str(e) and "Broken pipe" not in str(e):
+                    logging.critical(f"Unhandled error in sockf1 loop: {e}.")
+                self._close_whisper()
                 break
 
 
@@ -546,7 +663,7 @@ class FF_CLIENT(threading.Thread):
             try:
                 data = clients.recv(9999)
                 if data == b"":
-                    logging.error("Whisper socket closed by remote host. Restarting.")
+                    logging.error("Whisper socket closed (remote or online failure). Restarting.")
                     restart_program()
                     break
 

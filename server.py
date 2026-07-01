@@ -37,13 +37,19 @@ def add_log(message, level="info"):
         log_queue.put_nowait(entry)
 
 def run_bot(uid, password, name):
+    from app import FF_CLIENT, BotRestartException, BotBannedException
     try:
         add_log(f"[{name}] Menghubungkan...", "info")
         bot_status[uid] = "connecting"
-        from app import FF_CLIENT
         bot = FF_CLIENT(uid, password)
         bot_status[uid] = "online"
         add_log(f"[{name}] Bot online!", "success")
+    except BotBannedException as e:
+        bot_status[uid] = "banned"
+        add_log(f"[{name}] Akun dibanned oleh Garena: {e}", "error")
+    except BotRestartException:
+        bot_status[uid] = "offline"
+        add_log(f"[{name}] Bot berhenti (restart diminta)", "info")
     except OSError as e:
         bot_status[uid] = "error"
         add_log(f"[{name}] Gagal koneksi ke server game (network error): {e}", "error")

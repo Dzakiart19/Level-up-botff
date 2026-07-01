@@ -128,6 +128,7 @@
   .status-connecting { background: rgba(255,214,0,0.12); color: var(--yellow); }
   .status-offline { background: rgba(255,255,255,0.05); color: var(--muted); }
   .status-error { background: rgba(255,60,60,0.12); color: var(--accent); }
+  .status-banned { background: rgba(180,0,255,0.12); color: #cc77ff; }
 
   /* ── MAIN ── */
   .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
@@ -454,6 +455,7 @@ function statusLabel(s) {
   if (s === 'online') return '<span class="acc-status status-online">● Online</span>';
   if (s === 'connecting') return '<span class="acc-status status-connecting">◌ Connecting</span>';
   if (s === 'error') return '<span class="acc-status status-error">✗ Error</span>';
+  if (s === 'banned') return '<span class="acc-status status-banned">⊘ Banned</span>';
   return '<span class="acc-status status-offline">○ Offline</span>';
 }
 
