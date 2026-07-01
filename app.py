@@ -187,6 +187,14 @@ def build_majorlogin_packet(access_token: str, open_id: str, platform_type: int,
     m.unique_device_id  = _gen_device_id_for_uid(uid or open_id)
     m.client_ip         = _gen_ip_for_uid(uid or open_id)
     m.language          = "id"
+
+    # GameSecurity (memory_available field) — anti-cheat token required by Garena
+    import hashlib as _hashlib
+    gs = m.memory_available
+    gs.version = 1
+    _seed_str = f"{uid or open_id}|{sw}|{cpu}"
+    gs.hidden_value = _hashlib.md5(_seed_str.encode()).digest()
+
     m.open_id           = open_id
     m.open_id_type      = str(platform_type)
     m.device_type       = "Handheld"
@@ -439,6 +447,11 @@ class FF_CLIENT(threading.Thread):
                     "ff90c07eb9815af30a43b4a9f6019516e0e4c703b44092516d0defa4cef51f2a"
                 )
                 OLD_OPEN_ID = "996a629dbcdb3964be6b6978f5d814db"
+                logging.info(
+                    f"[OAUTH] UID={uid} platform={resp_json.get('platform')} "
+                    f"main_active_platform={resp_json.get('main_active_platform')} "
+                    f"open_id={NEW_OPEN_ID[:8]}..."
+                )
                 time.sleep(0.3)
                 result = self.TOKEN_MAKER(
                     OLD_ACCESS_TOKEN, NEW_ACCESS_TOKEN, OLD_OPEN_ID, NEW_OPEN_ID, uid
