@@ -710,10 +710,8 @@ class FF_CLIENT(threading.Thread):
 
             except Exception as e:
                 logging.error(f"[AUTO] Error in auto_start_loop: {e}", exc_info=True)
-                # yahan network/socket ka issue hoga to restart sahi rahega
                 self.stop_auto = True
                 self.auto_start_running = False
-                restart_program()
                 break
 
 
