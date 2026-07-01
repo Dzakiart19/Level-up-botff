@@ -249,7 +249,7 @@ def extract_jwt_from_hex(hex_str):
 
 
 class FF_CLIENT(threading.Thread):
-    def __init__(self, uid, password, status_callback=None):
+    def __init__(self, uid, password, status_callback=None, instance_holder=None):
         super().__init__()
         self.id = uid
         self.password = password
@@ -259,6 +259,9 @@ class FF_CLIENT(threading.Thread):
         self.auto_start_teamcode = None
         self.stop_auto = False
         self._status_callback = status_callback
+        # Simpan referensi self ke holder sebelum blocking call
+        if instance_holder is not None:
+            instance_holder["bot"] = self
         self.get_tok()
 
     # ------------- LOGIN PART -------------

@@ -16,6 +16,7 @@ ACCOUNTS_FILE = "accounts.json"
 log_queue = queue.Queue(maxsize=500)
 bot_status = {}
 bot_threads = {}
+bot_instances = {}
 active_team_code = None
 
 def load_accounts():
@@ -54,12 +55,28 @@ def run_bot(uid, password, name):
         add_log(f"[{name}] Menghubungkan...", "info")
         bot_status[uid] = "connecting"
 
+        holder = {"bot": None}
+        bot_instances[uid] = holder
+
         def status_callback(status):
             bot_status[uid] = status
             if status == "online":
                 add_log(f"[{name}] Bot online! Terkoneksi ke server game.", "success")
+                # Jika ada team code aktif, langsung jalankan auto_start_loop
+                inst = holder.get("bot")
+                if inst and active_team_code and not inst.auto_start_running:
+                    inst.auto_start_running = True
+                    inst.auto_start_teamcode = active_team_code
+                    inst.stop_auto = False
+                    t = threading.Thread(
+                        target=inst.auto_start_loop,
+                        args=(active_team_code, uid),
+                        daemon=True,
+                    )
+                    t.start()
+                    add_log(f"[{name}] Auto join team {active_team_code} dimulai", "success")
 
-        bot = FF_CLIENT(uid, password, status_callback=status_callback)
+        bot = FF_CLIENT(uid, password, status_callback=status_callback, instance_holder=holder)
         # Sampai sini hanya jika bot disconnect secara normal
         if bot_status.get(uid) == "online":
             bot_status[uid] = "offline"
@@ -185,9 +202,36 @@ def set_teamcode():
     code = data.get("code", "").strip()
     if not code.isdigit():
         return jsonify({"ok": False, "msg": "Team code harus angka"})
+
+    # Hentikan auto loop lama di semua bot
+    for uid, holder in bot_instances.items():
+        inst = holder.get("bot")
+        if inst and inst.auto_start_running:
+            inst.stop_auto = True
+            inst.auto_start_running = False
+
     active_team_code = code
-    add_log(f"Team code diset: {code} — kirim /lw di game untuk aktivasi", "success")
-    return jsonify({"ok": True, "msg": f"Team code {code} aktif"})
+    triggered = 0
+
+    # Trigger auto_start_loop di semua bot yang sudah online
+    for uid, holder in bot_instances.items():
+        if bot_status.get(uid) != "online":
+            continue
+        inst = holder.get("bot")
+        if inst and not inst.auto_start_running:
+            inst.auto_start_running = True
+            inst.auto_start_teamcode = code
+            inst.stop_auto = False
+            t = threading.Thread(
+                target=inst.auto_start_loop,
+                args=(code, uid),
+                daemon=True,
+            )
+            t.start()
+            triggered += 1
+
+    add_log(f"Team code {code} diset — {triggered} bot langsung join", "success")
+    return jsonify({"ok": True, "msg": f"Team code {code} aktif, {triggered} bot join"})
 
 @app.route("/api/status")
 def api_status():
